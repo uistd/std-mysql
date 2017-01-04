@@ -1,0 +1,34 @@
+{
+  "name": "ffan/php/mysql",
+  "description": "FFan mysql",
+  "keywords": [
+    "ffan",
+    "php",
+    "mysql"
+  ],
+  "type": "composer",
+  "authors": [
+    {
+      "name": "huangshunzhao",
+      "email": "huangshunzhao@wanda.cn",
+      "role": "Founder and project lead"
+    }
+  ],
+  "require": {
+    "php": ">=5.5.0",
+    "ext-mysqli": "*",
+    "ffan/php/utils": "*"
+  },
+  "autoload": {
+    "psr-4": {
+      "ffan\\php\\mysql\\": ""
+    }
+  },
+  "minimum-stability": "dev",
+  "archive": {
+    "exclude": [
+      "test",
+      ".gitignore"
+    ]
+  }
+}
