@@ -15,6 +15,11 @@ class MysqlException extends \Exception {
      * 执行失败
      */
     const QUERY_FAIL = 2;
+
+    /**
+     * SQL语法错误
+     */
+    const QUERY_SYNTAX_ERROR = 3;
     
     /**
      * mysql断开
