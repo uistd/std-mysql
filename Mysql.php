@@ -148,4 +148,43 @@ class Mysql implements MysqlInterface
     {
         // TODO: Implement close() method.
     }
+
+    /**
+     * 更新记录
+     * @param string $table 表名
+     * @param array $data 数据
+     * @param string $condition 条件
+     * @param int $limit 限制条数 0：不限制
+     * @return int 影响条数
+     * @throws MysqlException
+     */
+    public function update($table, $data, $condition, $limit = 1)
+    {
+        // TODO: Implement update() method.
+    }
+
+    /**
+     * 插入一条或者多条数据
+     * @param string $table
+     * @param array $data
+     * @return void
+     * @throws MysqlException
+     */
+    public function insert($table, $data)
+    {
+        // TODO: Implement insert() method.
+    }
+
+    /**
+     * 删除记录
+     * @param string $table 表名
+     * @param string $condition 条件
+     * @param int $limit 限制记录 0：不限制
+     * @return int 影响条数
+     * @throws MysqlException
+     */
+    public function delete($table, $condition, $limit = 1)
+    {
+        // TODO: Implement delete() method.
+    }
 }
