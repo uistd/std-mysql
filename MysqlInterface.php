@@ -19,7 +19,7 @@ interface MysqlInterface
     /**
      * 获取查询结果的第一条记录的第一个字段
      * @param $query_sql
-     * @return string|false
+     * @return string|null
      * @throws MysqlException
      */
     public function getFirstCol($query_sql);
@@ -28,7 +28,7 @@ interface MysqlInterface
      * 获取多条记录，以枚举数组返回
      * @param string $query_sql SQL语句
      * @param null|string $class_name 对象名称，如果传入非NULL，会返回对象
-     * @return array
+     * @return array|object
      * @throws MysqlException
      */
     public function getMultiRow($query_sql, $class_name = null);
@@ -38,7 +38,7 @@ interface MysqlInterface
      * @param string $query_sql SQL语句
      * @param string $index_col 做为key的字段名
      * @param null|string $class_name
-     * @return array
+     * @return array|object
      * @throws MysqlException
      */
     public function getMultiAssocRow($query_sql, $index_col, $class_name = null);
@@ -77,7 +77,7 @@ interface MysqlInterface
      * @return int 影响条数
      * @throws MysqlException
      */
-    public function update($table, $data, $condition, $limit = 1);
+    public function update($table, array $data, $condition, $limit = 1);
 
     /**
      * 插入一条或者多条数据
@@ -86,7 +86,7 @@ interface MysqlInterface
      * @return void
      * @throws MysqlException
      */
-    public function insert($table, $data);
+    public function insert($table, array $data);
 
     /**
      * 删除记录
