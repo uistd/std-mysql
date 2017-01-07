@@ -408,10 +408,7 @@ class Mysql implements MysqlInterface
      */
     public function query($query_sql)
     {
-        $type_str = strtoupper(substr($query_sql, 0, 6));
-        //sql语句只要不是select，都是写操作
-        $is_write = 'SELECT' !== $type_str;
-        $this->executeQuery($query_sql, $is_write);
+        $this->executeQuery($query_sql, MysqlCommon::isWriteSql($query_sql));
     }
 
     /**
@@ -485,6 +482,7 @@ class Mysql implements MysqlInterface
     {
         if ($this->link_obj) {
             $this->link_obj->close();
+            $this->link_obj = null;
         }
     }
 
