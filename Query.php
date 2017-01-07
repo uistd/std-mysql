@@ -35,6 +35,11 @@ class Query
     private $table_name;
 
     /**
+     * @var string 表别名
+     */
+    private $table_alias;
+
+    /**
      * @var string 配置名
      */
     private $conf_name;
@@ -85,6 +90,11 @@ class Query
     private $extra_option;
 
     /**
+     * @var string
+     */
+    private $having_str;
+
+    /**
      * QueryInterface constructor.
      * @param string $config_name 配置名（根据配置自动实现分表等功能）
      */
@@ -97,19 +107,22 @@ class Query
      * 设置表名，如果设置了hash_id，根据配置自动生成表名后缀
      * @param string $table_name 表名
      * @param int $hash_id 用于分表的Id
+     * @param null $alias 别名
      * @return $this
      */
-    public function tableName($table_name, $hash_id = 0)
+    public function table($table_name, $hash_id = 0, $alias = null)
     {
         $this->table_name = $table_name;
-        if ($hash_id <= 0) {
-            return $this;
+        if ($hash_id > 0) {
+            //如果有配置表名hash后缀
+            $conf_arr = FfanConfig::get(Mysql::CONFIG_KEY . '.' . $this->conf_name);
+            if (isset($conf_arr['table_hash']) && ($conf_arr['table_hash'][$table_name])) {
+                $table_num = (int)$conf_arr['table_hash'][$table_name];
+                $this->table_name .= '_' . ($hash_id % $table_num);
+            }
         }
-        //如果有配置表名hash后缀
-        $conf_arr = FfanConfig::get(Mysql::CONFIG_KEY . '.' . $this->conf_name);
-        if (isset($conf_arr['table_hash']) && ($conf_arr['table_hash'][$table_name])) {
-            $table_num = (int)$conf_arr['table_hash'][$table_name];
-            $this->table_name .= '_' . ($hash_id % $table_num);
+        if (null !== $alias) {
+            $this->table_alias = $alias;
         }
         return $this;
     }
@@ -123,7 +136,7 @@ class Query
      * @param bool $in_bracket 是否放入括号中
      * @return $this
      */
-    public function where($field, $operator, $value = null, $logic = self::LOGIC_AND, $in_bracket = false)
+    public function condition($field, $operator, $value = null, $logic = self::LOGIC_AND, $in_bracket = false)
     {
         $this->where_arr[] = array(
             'field' => $field,
@@ -133,22 +146,6 @@ class Query
             'in_bracket' => $in_bracket
         );
         return $this;
-    }
-
-    /**
-     * 不在
-     */
-    public function notIn()
-    {
-        
-    }
-
-    /**
-     * 
-     */
-    public function in()
-    {
-        
     }
 
     /**
@@ -193,6 +190,20 @@ class Query
         $this->start_row = $start_row;
         $this->limit = (int)$limit;
         return $this;
+    }
+
+    /**
+     * 附加having条件
+     * @param string $having_str having字符串
+     * @param string $logic 逻辑
+     */
+    private function having($having_str, $logic = self::LOGIC_AND)
+    {
+        if (null === $having_str) {
+            $this->having_str = $having_str;
+        } else {
+            $this->having_str .= ' ' . $logic . ' ' . $having_str;
+        }
     }
 
     /**
@@ -277,14 +288,15 @@ class Query
         );
         return $this;
     }
-    
+
     /**
      * mysql 的 top函数
      * @param string $field 字段名
      * @param null|string $alias 别名
      * @return $this
      */
-    public function avg($field, $alias = null) {
+    public function avg($field, $alias = null)
+    {
         $this->extra_option['func'][] = ['AVG', $field, $alias];
         return $this;
     }
@@ -326,12 +338,103 @@ class Query
     }
 
     /**
+     * mysql 的 sum 函数
+     * @param string $field 字段名
+     * @param null|string $alias 别名
+     * @return $this
+     */
+    public function sum($field, $alias = null)
+    {
+        $this->extra_option['func'][] = ['SUM', $field, $alias];
+        return $this;
+    }
+
+    /**
+     * mysql 的 len 函数
+     * @param string $field 字段名
+     * @param null|string $alias 别名
+     * @return $this
+     */
+    public function len($field, $alias = null)
+    {
+        $this->extra_option['func'][] = ['LEN', $field, $alias];
+        return $this;
+    }
+
+    /**
+     * mysql 的 format 函数
+     * @param string $field 字段名
+     * @param string $format 格式
+     * @param null|string $alias 别名
+     * @return $this
+     */
+    public function format($field, $format, $alias = null)
+    {
+        $this->extra_option['func'][] = ['LEN', $field, $alias, $format];
+        return $this;
+    }
+
+    /**
+     * mysql 的 round 函数
+     * @param string $field 字段名
+     * @param int $decimal 精度
+     * @param null|string $alias 别名
+     * @return $this
+     */
+    public function round($field, $decimal, $alias = null)
+    {
+        $this->extra_option['func'][] = ['ROUND', $field, $alias, $decimal];
+        return $this;
+    }
+
+    /**
      * 生成sql语句
      * @return string
+     * @throws MysqlException
      */
-    public function toSql()
+    public function export()
     {
+        if (null === $this->table_name) {
+            throw new MysqlException('没有设置table名称', MysqlException::QUERY_SYNTAX_ERROR);
+        }
+        switch($this->sql_type) {
+            case 'INSERT':
+                $re_str = $this->export_insert();
+                break;
+        }
+    }
 
+    /**
+     * 输出insertSQL
+     */
+    private function export_insert()
+    {
+        $data = $this->extra_data;
+        $fields_arr = array();
+        $value_arr = array();
+        //如果数组第一项 还是数据，表示是一次插入多条数据
+        if (is_array(current($data))) {
+            $index = 0;
+            foreach ($data as $each_data) {
+                $each_arr = array();
+                foreach ($each_data as $col => $val) {
+                    if (0 === $index++) {
+                        $fields_arr[] = $col;
+                    }
+                    $each_arr[] = $val;
+                }
+                $value_arr[] = "('" . join("','", $each_arr) . "')";
+            }
+        } //只有一项
+        else {
+            foreach ($data as $col_item => $val_item) {
+                $fields_arr[] = $col_item;
+                $value_arr[] = $val_item;
+            }
+        }
+        //这里故意省去 INSERT 因为PHPStorm有BUG
+        $sql = 'INTO `' . $this->table_name . '` ( `' . join(',', $fields_arr) . "`) VALUES ('" . join(',', $value_arr) . "')";
+        return 'INSERT ' . $sql;
     }
 
     /**
