@@ -2,6 +2,7 @@
 namespace ffan\php\mysql;
 
 use ffan\php\utils\Config as FfanConfig;
+use ffan\php\utils\Str as FfanStr;
 
 /**
  * Class Query 生成查询语句
@@ -75,7 +76,7 @@ class Query
     private $sql_type;
 
     /**
-     * @var string 字段
+     * @var array 字段
      */
     private $fields;
 
@@ -130,13 +131,13 @@ class Query
     /**
      * 生成一个where条件
      * @param string $field 条件
-     * @param string $operator 操作符
      * @param mixed $value 值
+     * @param string $operator 操作符
      * @param string $logic 如果是多个条件，条件之间的关系
      * @param bool $in_bracket 是否放入括号中
      * @return $this
      */
-    public function condition($field, $operator, $value = null, $logic = self::LOGIC_AND, $in_bracket = false)
+    public function condition($field, $value = null, $operator, $logic = self::LOGIC_AND, $in_bracket = false)
     {
         $this->where_arr[] = array(
             'field' => $field,
@@ -208,16 +209,46 @@ class Query
 
     /**
      * 生成查询SQL语句
-     * @param string $fields 字段
-     * @param int $limit 限制 默认是1000条，0 表示不限制
+     * @param string $_ 字段
      * @return $this
      */
-    public function select($fields = '*', $limit = 1000)
+    public function select($_)
     {
-        $this->fields = $fields;
+        $args = func_get_args();
+        foreach ($args as $each_arg) {
+            $this->field($each_arg);
+        }
         $this->setType('SELECT');
-        if ($limit > 0) {
-            $this->limit(0, $limit);
+        return $this;
+    }
+
+    /**
+     * 单独添加一个字段
+     * @param string|array $field 字段
+     * @param string $alias
+     * @throws MysqlException
+     * @return $this
+     */
+    public function field($field, $alias = null)
+    {
+        if (is_array($field)) {
+            $this->fields[] = $field;
+        } elseif (is_string($field)) {
+            //如果有',' 表示多个字段
+            if (false !== strpos($field, ',')) {
+                $fields_arr = FfanStr::split($field);
+                foreach ($fields_arr as $each_field) {
+                    $this->fields[] = $each_field;
+                }
+            }
+            elseif(!empty($alias) && is_string($alias)) {
+                $this->fields[] = array('name' => $field, 'alias' => $alias);
+            }
+            else {
+                $this->fields[] = $field;
+            }
+        } else {
+            throw new MysqlException('不支持的字段'. (string)$field, MysqlException::QUERY_SYNTAX_ERROR);
         }
         return $this;
     }
@@ -225,16 +256,25 @@ class Query
     /**
      * 生成更新SQL语句
      * @param array $data 更新的数据
-     * @param int $limit 限制条数 默认是1条，0：表示不限制
      * @return $this
      */
-    public function update($data, $limit = 1)
+    public function update($data)
     {
         $this->setType('UPDATE');
         $this->extra_data = $data;
-        if ($limit > 0) {
-            $this->limit(0, $limit);
-        }
+        return $this;
+    }
+
+    /**
+     * 单独设置一个更新字段
+     * @param string $field 字段
+     * @param string $value 值
+     * @param bool $is_increase 是否是自增长 或者 自减
+     * @return $this
+     */
+    public function updateField($field, $value, $is_increase = false)
+    {
+        $this->extra_data[$field] = $is_increase ? array('name' => $field, 'value' => $value ) : $field;
         return $this;
     }
 
