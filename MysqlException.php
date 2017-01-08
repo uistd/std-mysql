@@ -5,12 +5,13 @@ namespace ffan\php\mysql;
  * Class MysqlException
  * @package ffan\php\mysql
  */
-class MysqlException extends \Exception {
+class MysqlException extends \Exception
+{
     /**
      * 无法连接
      */
     const CONNECT_FAIL = 1;
-    
+
     /**
      * 执行失败
      */
@@ -20,7 +21,7 @@ class MysqlException extends \Exception {
      * SQL语法错误
      */
     const QUERY_SYNTAX_ERROR = 3;
-    
+
     /**
      * mysql断开
      */

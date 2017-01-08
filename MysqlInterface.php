@@ -58,7 +58,7 @@ interface MysqlInterface
      * @throws MysqlException
      */
     public function getMultiAssocCol($query_sql);
-    
+
     /**
      * 执行一条SQL语句
      * @param string $query_sql
@@ -71,22 +71,22 @@ interface MysqlInterface
     /**
      * 更新记录
      * @param string $table 表名
-     * @param array $data 数据
+     * @param array|object $data 数据
      * @param string $condition 条件
      * @param int $limit 限制条数 0：不限制
      * @return int 影响条数
      * @throws MysqlException
      */
-    public function update($table, array $data, $condition, $limit = 1);
+    public function update($table, $data, $condition, $limit = 1);
 
     /**
      * 插入一条或者多条数据
      * @param string $table
-     * @param array $data
+     * @param array|object $data
      * @return void
      * @throws MysqlException
      */
-    public function insert($table, array $data);
+    public function insert($table, $data);
 
     /**
      * 删除记录
@@ -97,7 +97,7 @@ interface MysqlInterface
      * @throws MysqlException
      */
     public function delete($table, $condition, $limit = 1);
-    
+
     /**
      * 取得最后的last_insert_id
      * @return int
@@ -109,7 +109,7 @@ interface MysqlInterface
      * @return int
      */
     public function affectRows();
-    
+
     /**
      * 提交变更
      * @return void

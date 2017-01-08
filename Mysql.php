@@ -135,10 +135,11 @@ class Mysql implements MysqlInterface
             $this->commit_flag = true;
             $this->executeQuery('BEGIN');
         }
+        $this->logMsg('Query: ' . $query_sql);
         $time = microtime(true);
         $res = $this->link_obj->query($query_sql);
         $run_time = round((microtime(true) - $time) * 1000, 2);
-        $log_content = "Query: {query}\nAffect rows: {affect_row} \nQuery time: {query_time}ms\n--------------------------------------\n";
+        $log_content = "Affect rows: {affect_row}   Query time: {query_time}ms\n--------------------------------------\n";
         $this->logMsg($log_content, ['affect_row' => $this->link_obj->affected_rows, 'query_time' => $run_time]);
         //记录慢查询
         if ($this->slow_query_time > 0 && $run_time > $this->slow_query_time && 'COMMIT' !== $query_sql) {
@@ -267,8 +268,8 @@ class Mysql implements MysqlInterface
             }
         } else {
             while ($row = $res->fetch_assoc()) {
-                if (isset($row[$class_name])) {
-                    $rows[$class_name] = $row;
+                if (isset($row[$index_col])) {
+                    $rows[$row[$index_col]] = $row;
                 } else {
                     $rows[] = $row;
                 }
@@ -321,17 +322,28 @@ class Mysql implements MysqlInterface
     /**
      * 更新记录
      * @param string $table 表名
-     * @param array $data 数据
+     * @param array|object $data 数据
      * @param string $condition 条件
      * @param int $limit 限制条数 0：不限制
      * @return int 影响条数
      * @throws MysqlException
      */
-    public function update($table, array $data, $condition, $limit = 1)
+    public function update($table, $data, $condition, $limit = 1)
     {
         $new_sets = array();
+        //如果传入的是对象，转成数组
+        if (is_object($data)) {
+            $data = $this->objectToArray($data);
+        }
+        if (!is_array($data)) {
+            throw new \InvalidArgumentException('Param $data must be object or array');
+        }
         foreach ($data as $col_item => $val_item) {
             $new_sets[] = '`' . $col_item . "`='" . $val_item . "'";
+        }
+        //没有需要更新的
+        if (empty($new_sets)) {
+            return 0;
         }
         $query_sql = 'UPDATE `' . $table . '` SET ' . implode(', ', $new_sets) . ' WHERE ' . $condition;
         $limit = (int)$limit;
@@ -345,42 +357,75 @@ class Mysql implements MysqlInterface
     /**
      * 插入一条或者多条数据
      * @param string $table
-     * @param array $data
+     * @param array|object $data
      * @return void
      * @throws MysqlException
      */
-    public function insert($table, array $data)
+    public function insert($table, $data)
     {
         if (empty($data)) {
             return;
         }
         $fields_arr = array();
-        $value_arr = array();
         //如果数组第一项 还是数据，表示是一次插入多条数据
         if (is_array(current($data))) {
-            $index = 0;
+            $value_arr = array();
             foreach ($data as $each_data) {
-                $each_arr = array();
-                foreach ($each_data as $col => $val) {
-                    if (0 === $index++) {
-                        $fields_arr[] = $col;
-                    }
-                    $each_arr[] = $val;
-                }
+                $each_arr = $this->parseInsertRow($each_data, $fields_arr);
                 $value_arr[] = "('" . join("','", $each_arr) . "')";
             }
+            $value_str = join(',', $value_arr);
         } //只有一项
         else {
-            foreach ($data as $col_item => $val_item) {
-                $fields_arr[] = $col_item;
-                $value_arr[] = $val_item;
-            }
+            $value_arr = $this->parseInsertRow($data, $fields_arr);
+            $value_str = "('" . join("','", $value_arr) . "')";
         }
+        $fields = array_keys($fields_arr);
         //这里故意省去 INSERT 因为PHPStorm有BUG
-        $sql = 'INTO `' . $table . '` ( `' . join(',', $fields_arr) . "`) VALUES ('" . join(',', $value_arr) . "')";
+        $sql = 'INTO `' . $table . '` ( `' . join('`,`', $fields) . '`) VALUES ' . $value_str;
         $this->executeQuery('INSERT ' . $sql, true);
     }
-    
+
+    /**
+     * 解析插入的一行数据
+     * @param array|object $data 数据
+     * @param array $fields_arr 字段信息
+     * @return array
+     */
+    private function parseInsertRow($data, &$fields_arr)
+    {
+        if (is_object($data)) {
+            $data = $this->objectToArray($data);
+        }
+        if (!is_array($data)) {
+            throw new \InvalidArgumentException('Insert data must be object or array');
+        }
+        $value_arr = array();
+        foreach ($data as $col_item => $val_item) {
+            $fields_arr[$col_item] = true;
+            $value_arr[] = $val_item;
+        }
+        return $value_arr;
+    }
+
+    /**
+     * 将对象转换成数组
+     * @param object $object
+     * @return array
+     */
+    private function objectToArray($object)
+    {
+        $result = array();
+        $arr = get_object_vars($object);
+        foreach ($arr as $key => $value) {
+            if (null === $value) {
+                continue;
+            }
+            $result[$key] = $value;
+        }
+        return $result;
+    }
+
     /**
      * 删除记录
      * @param string $table 表名
@@ -391,12 +436,12 @@ class Mysql implements MysqlInterface
      */
     public function delete($table, $condition, $limit = 1)
     {
-        $sql = 'FROM '. $table .' WHERE '. $condition;
+        $sql = 'FROM ' . $table . ' WHERE ' . $condition;
         $limit = (int)$limit;
         if ($limit > 0) {
-            $sql .= ' LIMIT '. $limit;
+            $sql .= ' LIMIT ' . $limit;
         }
-        $this->executeQuery('DELETE '. $sql, true);
+        $this->executeQuery('DELETE ' . $sql, true);
         return $this->affectRows();
     }
 
@@ -491,7 +536,7 @@ class Mysql implements MysqlInterface
      * @param string $content 消息内容
      * @param array $data 消息变量替换数据
      */
-    private function logMsg($content, $data = null)
+    private function logMsg($content, $data = array())
     {
         if (null === $this->logger) {
             $this->logger = LoggerFactory::get();

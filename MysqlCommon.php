@@ -1,6 +1,8 @@
 <?php
 namespace ffan\php\mysql;
 
+use ffan\php\utils\Env as FfanEnv;
+
 /**
  * Class MysqlCommon Mysql操作通用函数
  * @package ffan\php\mysql
@@ -17,5 +19,26 @@ class MysqlCommon
         $type_str = strtoupper(substr($sql, 0, 6));
         //sql语句只要不是select，都是写操作
         return 'SELECT' !== $type_str;
+    }
+
+    /**
+     * 获取分表的名称
+     * @param string $table_name 表名
+     * @param int $hash_id 用于hash的ID
+     * @param int $table_count 总表数量
+     * @return string
+     */
+    public static function tableHash($table_name, $hash_id, $table_count = 16)
+    {
+        if ($table_count < 1) {
+            throw new \InvalidArgumentException('table count error');
+        }
+        //开发模式下，永远使用_0表
+        if (FfanEnv::isDev()) {
+            $sub_id = 0;
+        } else {
+            $sub_id = $hash_id % $table_count;
+        }
+        return $table_name . '_' . $sub_id;
     }
 }
