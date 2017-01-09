@@ -13,6 +13,10 @@ FfanConfig::addArray(
             'password' => '12345678',
             'database' => 'test_db',
         ),
+        'ffan-logger.web' => array(
+            'file' => 'test',
+            'path' => 'test'
+        ),
         'runtime_path' => __DIR__ . DIRECTORY_SEPARATOR,
         'env' => 'dev'
     )
@@ -41,6 +45,13 @@ for ($i = 0; $i < mt_rand(10, 50); $i++) {
     $rows[] = make_user();
 }
 $mysql->insert('users', $rows);
+
+$rows = array();
+for ($i = 0; $i < mt_rand(10, 50); $i++) {
+    $rows[] = make_user(true);
+}
+$mysql->insert('users', $rows);
+
 $user_id = $mysql->lastInsertId();
 echo 'Last insert id:', $user_id, PHP_EOL;
 
@@ -93,5 +104,10 @@ print_r($mysql->getMultiAssocRow('select * from `users` limit 10', 'username'));
 print_r($mysql->getMultiAssocCol('select id, username from `users` limit 10'));
 
 print_r($mysql->getMultiFirstCol('select id from `users` limit 10'));
+
+print_r($mysql->getRow('select * from `users` where `id`='. $user_id, '\ffan\php\mysql\UserEntity'));
+
+print_r($mysql->getMultiRow('select * from `users` limit 10', '\ffan\php\mysql\UserEntity'));
+print_r($mysql->getMultiAssocRow('select * from `users` limit 10', 'username', '\ffan\php\mysql\UserEntity'));
 
 $mysql->delete('users', 'id=' . $user_id);

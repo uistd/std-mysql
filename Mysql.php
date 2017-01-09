@@ -231,7 +231,7 @@ class Mysql implements MysqlInterface
             return $rows;
         }
         if (null !== $class_name) {
-            while ($row = $res->fetch_object()) {
+            while ($row = $res->fetch_object($class_name)) {
                 $rows[] = $row;
             }
         } else {
@@ -259,7 +259,7 @@ class Mysql implements MysqlInterface
             return $rows;
         }
         if (null !== $class_name) {
-            while ($row = $res->fetch_object()) {
+            while ($row = $res->fetch_object($class_name)) {
                 if (property_exists($row, $index_col)) {
                     $rows[$row->$index_col] = $row;
                 } else {
@@ -367,8 +367,9 @@ class Mysql implements MysqlInterface
             return;
         }
         $fields_arr = array();
-        //如果数组第一项 还是数据，表示是一次插入多条数据
-        if (is_array(current($data))) {
+        $current = current($data);
+        //如果数组第一项 是数组 或者 对象，表示是一次插入多条数据
+        if (is_array($current) || is_object($current)) {
             $value_arr = array();
             foreach ($data as $each_data) {
                 $each_arr = $this->parseInsertRow($each_data, $fields_arr);
