@@ -70,7 +70,7 @@ class RwMysql implements MysqlInterface
      */
     private function groupName()
     {
-        return MysqlFactory::CONFIG_GROUP . $this->config_name;
+        return MysqlFactory::CONFIG_GROUP .':' . $this->config_name;
     }
 
     /**

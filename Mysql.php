@@ -68,6 +68,17 @@ class Mysql implements MysqlInterface
     }
 
     /**
+     * 析构
+     */
+    public function __destruct()
+    {
+        //再次commit,防止遗漏commit
+        if ($this->commit_flag) {
+            $this->commit();
+        }
+    }
+
+    /**
      * 连接服务器
      * @throws InvalidConfigException
      */
@@ -108,7 +119,7 @@ class Mysql implements MysqlInterface
             $conf_arr[$item_name] = $default;
             return $default;
         }
-        throw new InvalidConfigException(MysqlFactory::CONFIG_GROUP . $this->config_name . '.' . $item_name, 'config not exist!');
+        throw new InvalidConfigException(MysqlFactory::CONFIG_GROUP .':' . $this->config_name . '.' . $item_name, 'config not exist!');
     }
 
     /**

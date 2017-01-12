@@ -18,7 +18,8 @@
     "php": ">=5.5.0",
     "ext-mysqli": "*",
     "ffan/php/utils": "*",
-    "ffan/php/logger": "*"
+    "ffan/php/logger": "*",
+    "ffan/php/event": "*"
   },
   "autoload": {
     "psr-4": {

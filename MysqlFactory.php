@@ -4,6 +4,7 @@ namespace ffan\php\mysql;
 use ffan\php\utils\Config as FFanConfig;
 use ffan\php\utils\InvalidConfigException;
 use ffan\php\utils\Str as FFanStr;
+use ffan\php\event\EventManager;
 
 /**
  * Class MysqlFactory
@@ -14,12 +15,17 @@ class MysqlFactory
     /**
      * 配置名
      */
-    const CONFIG_GROUP = 'ffan-mysql:';
+    const CONFIG_GROUP = 'ffan-mysql';
 
     /**
      * @var array 对象池
      */
     private static $object_arr;
+
+    /**
+     * @var bool 是否已经触发事件了
+     */
+    private static $is_trigger_event = false;
 
     /**
      * 配置名称
@@ -35,13 +41,13 @@ class MysqlFactory
         if (!is_string($config_name)) {
             throw new \InvalidArgumentException('config_name is not string');
         }
-        $conf_arr = FFanConfig::get(self::CONFIG_GROUP . $config_name);
+        $conf_arr = FFanConfig::get(self::CONFIG_GROUP .':' . $config_name);
         if (!is_array($conf_arr)) {
             $conf_arr = [];
         }
         //如果指定了日志的类名，使用指定的类
         if (isset($conf_arr['class_name'])) {
-            $conf_key = self::CONFIG_GROUP . $config_name . '.class_name';
+            $conf_key = self::CONFIG_GROUP .':' . $config_name . '.class_name';
             if (!FFanStr::isValidClassName($conf_arr['class_name'])) {
                 throw new InvalidConfigException($conf_key, 'invalid class name!');
             }
@@ -57,6 +63,11 @@ class MysqlFactory
             $new_obj = new Mysql($config_name, $conf_arr);
         }
         self::$object_arr[$config_name] = $new_obj;
+        //触发ffan-mysql事件
+        if (!self::$is_trigger_event) {
+            self::$is_trigger_event = true;
+            EventManager::instance()->trigger(self::CONFIG_GROUP);
+        }
         return $new_obj;
     }
 
