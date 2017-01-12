@@ -1,21 +1,23 @@
 <?php
 namespace ffan\php\mysql;
 
+use ffan\php\utils\InvalidConfigException;
+
 /**
- * Class RwSeparateMysql 读写分离的mysql操作类
+ * Class RwMysql 读写分离的mysql操作类
  * @package ffan\php\mysql
  */
-class RwSeparateMysql implements MysqlInterface
+class RwMysql implements MysqlInterface
 {
     /**
-     * @var string 主库配置名称
+     * @var string 配置名称
      */
-    private $master_config;
+    private $config_name;
 
     /**
-     * @var string 从库配置名称
+     * @var array 数据库配置
      */
-    private $slave_config;
+    private $config_set;
 
     /**
      * @var Mysql 主库操作对象
@@ -35,24 +37,40 @@ class RwSeparateMysql implements MysqlInterface
 
     /**
      * RwSeparateMysql constructor.
-     * @param string $master_config 主库配置名称
-     * @param string $slave_config 从库配置名称
+     * @param string $config_name 主库配置名称
+     * @param array $config_set 从库配置名称
      */
-    public function __construct($master_config = 'master', $slave_config = 'slave')
+    public function __construct($config_name = 'main', array $config_set = array())
     {
-        $this->master_config = $master_config;
-        $this->slave_config = $slave_config;
+        $this->config_name = $config_name;
+        $this->config_set = $config_set;
     }
 
     /**
      * 获取主库操作对象
+     * @return Mysql
+     * @throws InvalidConfigException
      */
     private function getMaster()
     {
-        if (!$this->master_object) {
-            $this->master_object = new Mysql($this->master_config);
+        if ($this->master_object) {
+            return $this->master_object;
         }
+        if (!isset($this->config_set['master']) || !is_array($this->config_set['master'])) {
+            throw new InvalidConfigException($this->groupName(), '必须存在master的服务器配置');
+        }
+        $conf_arr = $this->config_set['master'] + $this->config_set;
+        $this->master_object = new Mysql($this->config_name . ' master', $conf_arr);
         return $this->master_object;
+    }
+
+    /**
+     * 返回组名
+     * @return string
+     */
+    private function groupName()
+    {
+        return MysqlFactory::CONFIG_GROUP . $this->config_name;
     }
 
     /**
@@ -67,6 +85,7 @@ class RwSeparateMysql implements MysqlInterface
     /**
      * 获取从库操作对象 如果主库已经连接，优先使用主库，除非已经设计强制作用从库
      * @return Mysql
+     * @throws InvalidConfigException
      */
     private function getSlave()
     {
@@ -74,9 +93,14 @@ class RwSeparateMysql implements MysqlInterface
         if ($this->master_object && !$this->is_force_slave) {
             return $this->master_object;
         }
-        if (!$this->slave_object) {
-            $this->slave_object = new Mysql($this->slave_object);
+        if ($this->slave_object) {
+            return $this->slave_object;
         }
+        if (!isset($this->config_set['slave']) || !is_array($this->config_set['slave'])) {
+            throw new InvalidConfigException($this->groupName(), '必须存在slave的服务器配置');
+        }
+        $conf_arr = $this->config_set['slave'] + $this->config_set;
+        $this->slave_object = new Mysql($this->config_name . ' slave', $conf_arr);
         return $this->slave_object;
     }
 
@@ -179,7 +203,7 @@ class RwSeparateMysql implements MysqlInterface
      * @return int 影响条数
      * @throws MysqlException
      */
-    public function update($table, array $data, $condition, $limit = 1)
+    public function update($table, $data, $condition, $limit = 1)
     {
         return $this->getMaster()->update($table, $data, $condition, $limit);
     }
@@ -191,7 +215,7 @@ class RwSeparateMysql implements MysqlInterface
      * @return void
      * @throws MysqlException
      */
-    public function insert($table, array $data)
+    public function insert($table, $data)
     {
         $this->getMaster()->insert($table, $data);
     }

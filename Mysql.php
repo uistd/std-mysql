@@ -1,7 +1,6 @@
 <?php
 namespace ffan\php\mysql;
 
-use ffan\php\utils\Config as FfanConfig;
 use ffan\php\utils\InvalidConfigException;
 use Psr\Log\LoggerInterface;
 use ffan\php\logger\LoggerFactory;
@@ -18,14 +17,14 @@ class Mysql implements MysqlInterface
     const MYSQL_GONE_AWAY = 2006;
 
     /**
-     * 配置名
-     */
-    const CONFIG_KEY = 'ffan-mysql';
-
-    /**
      * @var string 配置名称
      */
     private $config_name;
+
+    /**
+     * @var array 配置
+     */
+    private $config_set;
 
     /**
      * @var bool 是否已经创建连接
@@ -60,14 +59,12 @@ class Mysql implements MysqlInterface
     /**
      * Mysql constructor.
      * @param string $config_name 配置名称
-     * @param LoggerInterface|null $logger 日志
+     * @param array $config_set 配置数组
      */
-    public function __construct($config_name = 'master', LoggerInterface $logger = null)
+    public function __construct($config_name = 'master', array $config_set = [])
     {
         $this->config_name = $config_name;
-        if (null !== $logger) {
-            $this->logger = $logger;
-        }
+        $this->config_set = $config_set;
     }
 
     /**
@@ -76,11 +73,7 @@ class Mysql implements MysqlInterface
      */
     private function connect()
     {
-        $config_key = self::CONFIG_KEY . '.' . $this->config_name;
-        $conf_arr = FfanConfig::get($config_key);
-        if (!is_array($conf_arr)) {
-            throw new InvalidConfigException($config_key);
-        }
+        $conf_arr = $this->config_set;
         $host = $this->getConfigItem($conf_arr, 'host', '127.0.0.1');
         $user = $this->getConfigItem($conf_arr, 'user');
         $password = $this->getConfigItem($conf_arr, 'password');
@@ -115,7 +108,7 @@ class Mysql implements MysqlInterface
             $conf_arr[$item_name] = $default;
             return $default;
         }
-        throw new InvalidConfigException(self::CONFIG_KEY . '.' . $this->config_name . '.' . $item_name);
+        throw new InvalidConfigException(MysqlFactory::CONFIG_GROUP . $this->config_name . '.' . $item_name, 'config not exist!');
     }
 
     /**

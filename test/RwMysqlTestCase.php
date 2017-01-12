@@ -1,11 +1,21 @@
 <?php
 namespace ffan\php\mysql;
 
-require_once '../vendor/autoload.php';
 require_once 'UserEntity.php';
+require_once '../vendor/autoload.php';
 require_once 'config.php';
 
-$mysql = MysqlFactory::get();
+/** @var RwMysql $mysql */
+$mysql = MysqlFactory::get('rw');
+
+//下面几个select应该在从库读数据
+print_r($mysql->getMultiAssocRow('select * from `users` limit 10', 'username'));
+
+print_r($mysql->getMultiAssocCol('select id, username from `users` limit 10'));
+
+print_r($mysql->getMultiFirstCol('select id from `users` limit 10'));
+
+//insert会连接主库
 $mysql->insert('users', make_user());
 $rows = array();
 for ($i = 0; $i < mt_rand(10, 50); $i++) {
@@ -60,23 +70,21 @@ $up_arr = array('username' => 'update_user_' . mt_rand(1, 2000000));
 $mysql->update('users', $up_arr, 'id=' . $user_id);
 $mysql->commit();
 
+//之后的select将继续使用主库
 print_r($mysql->getMultiRow('select * from `users` limit 10'));
 
 print_r($mysql->getRow('select * from `users` where `id`=' . $user_id));
 
 var_dump($mysql->getFirstCol('select * from `users` where `id`=' . $user_id));
 
-print_r($mysql->getMultiAssocRow('select * from `users` limit 10', 'username'));
-
-print_r($mysql->getMultiAssocCol('select id, username from `users` limit 10'));
-
-print_r($mysql->getMultiFirstCol('select id from `users` limit 10'));
-
 print_r($mysql->getRow('select * from `users` where `id`=' . $user_id, '\ffan\php\mysql\UserEntity'));
 
+//强制使用从库
+$mysql->setForceSlave(true);
+//接下来的查询将使用从库
 print_r($mysql->getMultiRow('select * from `users` limit 10', '\ffan\php\mysql\UserEntity'));
 print_r($mysql->getMultiAssocRow('select * from `users` limit 10', 'username', '\ffan\php\mysql\UserEntity'));
 
+//delete 又将使用主库
 $mysql->delete('users', 'id=' . $user_id);
-
 $mysql->commit();
