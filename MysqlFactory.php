@@ -63,10 +63,12 @@ class MysqlFactory
             $new_obj = new Mysql($config_name, $conf_arr);
         }
         self::$object_arr[$config_name] = $new_obj;
-        //触发ffan-mysql事件
+        //通过事件自动调用commit 和 rollback
         if (!self::$is_trigger_event) {
             self::$is_trigger_event = true;
-            EventManager::instance()->trigger(self::CONFIG_GROUP);
+            $eve_manager = EventManager::instance();
+            $eve_manager->attach('commit', [__CLASS__, 'commit'], PHP_INT_MAX);
+            $eve_manager->attach('rollback', [__CLASS__, 'rollback'], PHP_INT_MAX);
         }
         return $new_obj;
     }
