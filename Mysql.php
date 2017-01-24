@@ -1,15 +1,18 @@
 <?php
 namespace ffan\php\mysql;
 
+use ffan\php\utils\EventDriver;
 use ffan\php\utils\InvalidConfigException;
+use ffan\php\utils\Transaction;
 use Psr\Log\LoggerInterface;
 use ffan\php\logger\LoggerFactory;
+use ffan\php\utils\Str as FFanStr;
 
 /**
  * Class Mysql Mysql操作类
  * @package ffan\php\mysql
  */
-class Mysql implements MysqlInterface
+class Mysql extends Transaction implements MysqlInterface
 {
     /**
      * mysql has gone away错误的错误ID
@@ -57,20 +60,26 @@ class Mysql implements MysqlInterface
     private $is_retry = false;
 
     /**
+     * @var int 事务优先级最大
+     */
+    protected $trans_priority = EventDriver::MAX_PRIORITY;
+
+    /**
      * Mysql constructor.
      * @param string $config_name 配置名称
      * @param array $config_set 配置数组
      */
     public function __construct($config_name = 'master', array $config_set = [])
     {
+        parent::__construct();
         $this->config_name = $config_name;
         $this->config_set = $config_set;
     }
 
     /**
-     * 析构
+     * 结束前动作
      */
-    public function __destruct()
+    public function __exit()
     {
         //再次commit,防止遗漏commit
         if ($this->commit_flag) {
@@ -91,10 +100,11 @@ class Mysql implements MysqlInterface
         $database = $this->getConfigItem($conf_arr, 'database');
         $port = $this->getConfigItem($conf_arr, 'port', 3306);
         $link_obj = new \mysqli($host, $user, $password, $database, $port);
+        $log_msg = FFanStr::tplReplace('connect {user}@{host}:{port} success, use database:{database}', $conf_arr);
+        $this->logMsg($log_msg);
         if ($link_obj->connect_errno) {
             throw new MysqlException($link_obj->connect_error, MysqlException::CONNECT_FAIL);
         }
-        $this->logMsg('connect {user}@{host}:{port} success, use database:{database}', $conf_arr);
         $this->is_connect = true;
         $charset = $this->getConfigItem($conf_arr, 'charset', 'utf8');
         $link_obj->set_charset($charset);
@@ -119,7 +129,7 @@ class Mysql implements MysqlInterface
             $conf_arr[$item_name] = $default;
             return $default;
         }
-        throw new InvalidConfigException(MysqlFactory::CONFIG_GROUP .':' . $this->config_name . '.' . $item_name, 'config not exist!');
+        throw new InvalidConfigException(MysqlFactory::configGroupName($this->config_name, $item_name), 'config not exist!');
     }
 
     /**

@@ -57,20 +57,11 @@ class RwMysql implements MysqlInterface
             return $this->master_object;
         }
         if (!isset($this->config_set['master']) || !is_array($this->config_set['master'])) {
-            throw new InvalidConfigException($this->groupName(), '必须存在master的服务器配置');
+            throw new InvalidConfigException(MysqlFactory::configGroupName($this->config_name), '必须存在master的服务器配置');
         }
         $conf_arr = $this->config_set['master'] + $this->config_set;
         $this->master_object = new Mysql($this->config_name . ' master', $conf_arr);
         return $this->master_object;
-    }
-
-    /**
-     * 返回组名
-     * @return string
-     */
-    private function groupName()
-    {
-        return MysqlFactory::CONFIG_GROUP .':' . $this->config_name;
     }
 
     /**
@@ -97,7 +88,7 @@ class RwMysql implements MysqlInterface
             return $this->slave_object;
         }
         if (!isset($this->config_set['slave']) || !is_array($this->config_set['slave'])) {
-            throw new InvalidConfigException($this->groupName(), '必须存在slave的服务器配置');
+            throw new InvalidConfigException(MysqlFactory::configGroupName($this->config_name), '必须存在slave的服务器配置');
         }
         $conf_arr = $this->config_set['slave'] + $this->config_set;
         $this->slave_object = new Mysql($this->config_name . ' slave', $conf_arr);

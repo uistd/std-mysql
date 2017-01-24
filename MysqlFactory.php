@@ -1,111 +1,54 @@
 <?php
 namespace ffan\php\mysql;
 
-use ffan\php\utils\Config as FFanConfig;
+use ffan\php\utils\Factory as FFanFactory;
 use ffan\php\utils\InvalidConfigException;
-use ffan\php\utils\Str as FFanStr;
-use ffan\php\event\EventManager;
 
 /**
  * Class MysqlFactory
  * @package ffan\php\mysql
  */
-class MysqlFactory
+class MysqlFactory extends FFanFactory
 {
     /**
-     * 配置名
+     * @var string 配置组名
      */
-    const CONFIG_GROUP = 'ffan-mysql';
+    protected static $config_group = 'ffan-mysql';
 
     /**
-     * @var array 对象池
+     * @var array 别名
      */
-    private static $object_arr;
+    protected static $class_alias = array(
+        'RwMysql' => 'ffan\php\mysql\RwMysql',
+    );
 
     /**
-     * @var bool 是否已经触发事件了
-     */
-    private static $is_trigger_event = false;
-
-    /**
-     * 配置名称
+     * 获取一个缓存实例
      * @param string $config_name
      * @return MysqlInterface
      * @throws InvalidConfigException
      */
     public static function get($config_name = 'main')
     {
-        if (isset(self::$object_arr[$config_name])) {
-            return self::$object_arr[$config_name];
+        $obj = self::getInstance($config_name);
+        if (!($obj instanceof MysqlInterface)) {
+            throw new InvalidConfigException(self::$config_group . ':' . $config_name . '.class', 'class is not implements of MysqlInterface');
         }
-        if (!is_string($config_name)) {
-            throw new \InvalidArgumentException('config_name is not string');
-        }
-        $conf_arr = FFanConfig::get(self::CONFIG_GROUP .':' . $config_name);
-        if (!is_array($conf_arr)) {
-            $conf_arr = [];
-        }
-        //如果指定了日志的类名，使用指定的类
-        if (isset($conf_arr['class_name'])) {
-            $conf_key = self::CONFIG_GROUP .':' . $config_name . '.class_name';
-            if (!FFanStr::isValidClassName($conf_arr['class_name'])) {
-                throw new InvalidConfigException($conf_key, 'invalid class name!');
-            }
-            $new_obj = new $conf_arr['class_name']($config_name, $conf_arr);
-            if (!($new_obj instanceof MysqlInterface)) {
-                throw new InvalidConfigException($conf_key, 'class is not implements of MysqlInterface');
-            }
-        } //如果配置里包含了master和slave, 自动使用RwMysql
-        elseif (isset($conf_arr['master'], $conf_arr['slave'])) {
-            $new_obj = new RwMysql($config_name, $conf_arr);
-        } //其它情况，默认使用Mysql
-        else {
-            $new_obj = new Mysql($config_name, $conf_arr);
-        }
-        self::$object_arr[$config_name] = $new_obj;
-        //通过事件自动调用commit 和 rollback
-        if (!self::$is_trigger_event) {
-            self::$is_trigger_event = true;
-            $eve_manager = EventManager::instance();
-            $eve_manager->attach('commit', [__CLASS__, 'commit'], PHP_INT_MAX);
-            $eve_manager->attach('rollback', [__CLASS__, 'rollback'], PHP_INT_MAX);
-        }
-        return $new_obj;
+        return $obj;
     }
 
     /**
-     * 全部rollback
+     * 默认的缓存类
+     * @param string $config_name
+     * @param array $conf_arr
+     * @return MysqlInterface
      */
-    public static function rollback()
+    protected static function defaultInstance($config_name, $conf_arr)
     {
-        if (!self::$object_arr) {
-            return;
-        }
-
-        /**
-         * @var string $name
-         * @var MysqlInterface $mysql_obj
-         */
-        foreach (self::$object_arr as $name => $mysql_obj) {
-            $mysql_obj->rollback();
-        }
-    }
-
-    /**
-     * 全部commit
-     */
-    public static function commit()
-    {
-        if (!self::$object_arr) {
-            return;
-        }
-
-        /**
-         * @var string $name
-         * @var MysqlInterface $mysql_obj
-         */
-        foreach (self::$object_arr as $name => $mysql_obj) {
-            $mysql_obj->commit();
+        if ('rw' === $config_name) {
+            return new RwMysql($config_name, $conf_arr);
+        } else {
+            return new Mysql($config_name, $conf_arr);
         }
     }
 }
