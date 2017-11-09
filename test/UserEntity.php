@@ -1,8 +1,8 @@
 <?php
-namespace ffan\php\mysql;
+namespace FFan\Std\Mysql;
 /**
  * Class UserView
- * @package ffan\php\mysql
+ * @package FFan\Std\Mysql
  */
 class UserEntity
 {

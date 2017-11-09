@@ -1,5 +1,5 @@
 <?php
-namespace ffan\php\mysql;
+namespace FFan\Std\Mysql;
 
 require_once 'UserEntity.php';
 require_once '../vendor/autoload.php';
@@ -77,13 +77,13 @@ print_r($mysql->getRow('select * from `users` where `id`=' . $user_id));
 
 var_dump($mysql->getFirstCol('select * from `users` where `id`=' . $user_id));
 
-print_r($mysql->getRow('select * from `users` where `id`=' . $user_id, '\ffan\php\mysql\UserEntity'));
+print_r($mysql->getRow('select * from `users` where `id`=' . $user_id, '\FFan\Std\Mysql\UserEntity'));
 
 //强制使用从库
 $mysql->setForceSlave(true);
 //接下来的查询将使用从库
-print_r($mysql->getMultiRow('select * from `users` limit 10', '\ffan\php\mysql\UserEntity'));
-print_r($mysql->getMultiAssocRow('select * from `users` limit 10', 'username', '\ffan\php\mysql\UserEntity'));
+print_r($mysql->getMultiRow('select * from `users` limit 10', '\FFan\Std\Mysql\UserEntity'));
+print_r($mysql->getMultiAssocRow('select * from `users` limit 10', 'username', '\FFan\Std\Mysql\UserEntity'));
 
 //delete 又将使用主库
 $mysql->delete('users', 'id=' . $user_id);

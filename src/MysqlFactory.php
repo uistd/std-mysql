@@ -1,12 +1,12 @@
 <?php
-namespace ffan\php\mysql;
+namespace FFan\Std\Mysql;
 
-use ffan\php\utils\Factory as FFanFactory;
-use ffan\php\utils\InvalidConfigException;
+use FFan\Std\Common\Factory as FFanFactory;
+use FFan\Std\Common\InvalidConfigException;
 
 /**
  * Class MysqlFactory
- * @package ffan\php\mysql
+ * @package FFan\Std\Mysql
  */
 class MysqlFactory extends FFanFactory
 {
@@ -19,7 +19,7 @@ class MysqlFactory extends FFanFactory
      * @var array 别名
      */
     protected static $class_alias = array(
-        'RwMysql' => 'ffan\php\mysql\RwMysql',
+        'RwMysql' => 'FFan\Std\Mysql\RwMysql',
     );
 
     /**

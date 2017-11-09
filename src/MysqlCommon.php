@@ -1,11 +1,11 @@
 <?php
-namespace ffan\php\mysql;
+namespace FFan\Std\Mysql;
 
 use ffan\php\utils\Env as FfanEnv;
 
 /**
  * Class MysqlCommon Mysql操作通用函数
- * @package ffan\php\mysql
+ * @package FFan\Std\Mysql
  */
 class MysqlCommon
 {

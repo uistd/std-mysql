@@ -1,18 +1,19 @@
 <?php
-namespace ffan\php\mysql;
 
-use ffan\php\utils\EventDriver;
-use ffan\php\utils\InvalidConfigException;
-use ffan\php\utils\Transaction;
-use Psr\Log\LoggerInterface;
-use ffan\php\logger\LoggerFactory;
-use ffan\php\utils\Str as FFanStr;
+namespace FFan\Std\Mysql;
+
+use FFan\Std\Common\InvalidConfigException;
+use FFan\Std\Console\Debug;
+use FFan\Std\Event\EventManager;
+use FFan\Std\Logger\LogHelper;
+use FFan\Std\Logger\LogRouter;
+use FFan\Std\Common\Str as FFanStr;
 
 /**
- * Class Mysql Mysql操作类
- * @package ffan\php\mysql
+ * Class Mysql
+ * @package FFan\Std\Mysql
  */
-class Mysql extends Transaction implements MysqlInterface
+class Mysql implements MysqlInterface
 {
     /**
      * mysql has gone away错误的错误ID
@@ -35,7 +36,7 @@ class Mysql extends Transaction implements MysqlInterface
     private $is_connect = false;
 
     /**
-     * @var LoggerInterface 日志对象
+     * @var LogRouter 日志对象
      */
     private $logger;
 
@@ -60,31 +61,17 @@ class Mysql extends Transaction implements MysqlInterface
     private $is_retry = false;
 
     /**
-     * @var int 事务优先级最大
-     */
-    protected $trans_priority = EventDriver::MAX_PRIORITY;
-
-    /**
      * Mysql constructor.
      * @param string $config_name 配置名称
      * @param array $config_set 配置数组
      */
     public function __construct($config_name = 'master', array $config_set = [])
     {
-        parent::__construct();
         $this->config_name = $config_name;
         $this->config_set = $config_set;
-    }
-
-    /**
-     * 结束前动作
-     */
-    public function __exit()
-    {
-        //再次commit,防止遗漏commit
-        if ($this->commit_flag) {
-            $this->commit();
-        }
+        $this->logger = LogHelper::getLogRouter();
+        //结束前再次确认已经commit
+        EventManager::instance()->attach(EventManager::SHUTDOWN_EVENT, [$this, 'commit']);
     }
 
     /**
@@ -99,9 +86,12 @@ class Mysql extends Transaction implements MysqlInterface
         $password = $this->getConfigItem($conf_arr, 'password');
         $database = $this->getConfigItem($conf_arr, 'database');
         $port = $this->getConfigItem($conf_arr, 'port', 3306);
-        $link_obj = new \mysqli($host, $user, $password, $database, $port);
+        Debug::timerStart();
+        //p: 表示长连接
+        $link_obj = new \mysqli('p:' . $host, $user, $password, $database, $port);
+        $cost_time = Debug::timerStop();
         $log_msg = FFanStr::tplReplace('connect {user}@{host}:{port} success, use database:{database}', $conf_arr);
-        $this->logMsg($log_msg);
+        $this->logMsg('connect', $log_msg, $cost_time);
         if ($link_obj->connect_errno) {
             throw new MysqlException($link_obj->connect_error, MysqlException::CONNECT_FAIL);
         }
@@ -149,12 +139,11 @@ class Mysql extends Transaction implements MysqlInterface
             $this->commit_flag = true;
             $this->executeQuery('BEGIN');
         }
-        $this->logMsg('Query: ' . $query_sql);
+
         $time = microtime(true);
         $res = $this->link_obj->query($query_sql);
         $run_time = round((microtime(true) - $time) * 1000, 2);
-        $log_content = "Affect rows: {affect_row}   Query time: {query_time}ms\n--------------------------------------\n";
-        $this->logMsg($log_content, ['affect_row' => $this->link_obj->affected_rows, 'query_time' => $run_time]);
+        $this->logMsg('Query',  $query_sql, $run_time .'ms');
         //记录慢查询
         if ($this->slow_query_time > 0 && $run_time > $this->slow_query_time && 'COMMIT' !== $query_sql) {
             $this->logSlowQuery($query_sql, (int)$run_time);
@@ -309,6 +298,7 @@ class Mysql extends Transaction implements MysqlInterface
         while ($row = $res_data->fetch_row()) {
             $res_rows[] = $row[0];
         }
+
         $res_data->free();
         return $res_rows;
     }
@@ -548,15 +538,15 @@ class Mysql extends Transaction implements MysqlInterface
 
     /**
      * 记录日志消息
+     * @param string $action
      * @param string $content 消息内容
-     * @param array $data 消息变量替换数据
+     * @param string $cost_time
      */
-    private function logMsg($content, $data = array())
+    private function logMsg($action, $content, $cost_time)
     {
-        if (null === $this->logger) {
-            $this->logger = LoggerFactory::get();
-        }
-        $this->logger->debug('[MYSQL][' . $this->config_name . ']' . $content, $data);
+        $io_step_str = Debug::addIoStep();
+        $msg = $io_step_str . '[MYSQL ' . $this->config_name . '][' . $action . '] ' . $content . '[' . $cost_time . ']';
+        $this->logger->info($msg);
     }
 
     /**
@@ -566,7 +556,6 @@ class Mysql extends Transaction implements MysqlInterface
      */
     private function logSlowQuery($sql, $slow_time)
     {
-        //这里写死，暂时没有觉得需要配置
-        LoggerFactory::get('slow_query')->warning('[MYSQL][' . $this->config_name . '][' . $slow_time . 'ms]' . $sql);
+        $this->logger->warning('[Mysql '.$this->config_name.'][SLOW_SQL]'. $sql .'['.$slow_time.']');
     }
 }
