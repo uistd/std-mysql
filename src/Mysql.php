@@ -88,7 +88,7 @@ class Mysql implements MysqlInterface
         $port = $this->getConfigItem($conf_arr, 'port', 3306);
         Debug::timerStart();
         //p: 表示长连接
-        $link_obj = new \mysqli('p:' . $host, $user, $password, $database, $port);
+        $link_obj = new \mysqli($host, $user, $password, $database, $port);
         $cost_time = Debug::timerStop();
         $log_msg = FFanStr::tplReplace('connect {user}@{host}:{port} success, use database:{database}', $conf_arr);
         $this->logMsg('connect', $log_msg, $cost_time);
