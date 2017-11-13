@@ -1,7 +1,8 @@
 <?php
+
 namespace FFan\Std\Mysql;
 
-use ffan\php\utils\InvalidConfigException;
+use FFan\Std\Common\InvalidConfigException;
 
 /**
  * Class RwMysql 读写分离的mysql操作类
@@ -283,5 +284,13 @@ class RwMysql implements MysqlInterface
         if ($this->slave_object) {
             $this->slave_object->close();
         }
+    }
+
+    /**
+     * 开始事务
+     */
+    public function begin()
+    {
+        $this->getMaster()->begin();
     }
 }

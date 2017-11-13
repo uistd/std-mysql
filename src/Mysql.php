@@ -4,7 +4,6 @@ namespace FFan\Std\Mysql;
 
 use FFan\Std\Common\InvalidConfigException;
 use FFan\Std\Console\Debug;
-use FFan\Std\Event\EventManager;
 use FFan\Std\Logger\LogHelper;
 use FFan\Std\Logger\LogRouter;
 use FFan\Std\Common\Str as FFanStr;
@@ -145,7 +144,7 @@ class Mysql implements MysqlInterface
         $time = microtime(true);
         $res = $this->link_obj->query($query_sql);
         $run_time = round((microtime(true) - $time) * 1000, 2);
-        $this->logMsg('Query',  $query_sql, $run_time .'ms');
+        $this->logMsg('Query', $query_sql, $run_time . 'ms');
         //记录慢查询
         if ($this->slow_query_time > 0 && $run_time > $this->slow_query_time && 'COMMIT' !== $query_sql) {
             $this->logSlowQuery($query_sql, (int)$run_time);
@@ -482,6 +481,18 @@ class Mysql implements MysqlInterface
     }
 
     /**
+     * 开始事务
+     */
+    public function begin()
+    {
+        if ($this->commit_flag) {
+            return;
+        }
+        $this->executeQuery('BEGIN');
+        $this->commit_flag = true;
+    }
+
+    /**
      * 提交变更
      * @return void
      * @throws MysqlException
@@ -558,6 +569,6 @@ class Mysql implements MysqlInterface
      */
     private function logSlowQuery($sql, $slow_time)
     {
-        $this->logger->warning('[Mysql '.$this->config_name.'][SLOW_SQL]'. $sql .'['.$slow_time.']');
+        $this->logger->warning('[Mysql ' . $this->config_name . '][SLOW_SQL]' . $sql . '[' . $slow_time . ']');
     }
 }

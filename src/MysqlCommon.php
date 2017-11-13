@@ -1,7 +1,7 @@
 <?php
 namespace FFan\Std\Mysql;
 
-use ffan\php\utils\Env as FfanEnv;
+use FFan\Std\Common\Env as FfanEnv;
 
 /**
  * Class MysqlCommon Mysql操作通用函数

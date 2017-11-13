@@ -67,7 +67,6 @@ interface MysqlInterface
      */
     public function query($query_sql);
 
-
     /**
      * 更新记录
      * @param string $table 表名
@@ -109,6 +108,11 @@ interface MysqlInterface
      * @return int
      */
     public function affectRows();
+
+    /**
+     * 开始事务
+     */
+    public function begin();
 
     /**
      * 提交变更
