@@ -71,7 +71,7 @@ class Mysql implements MysqlInterface
         $this->config_set = $config_set;
         $this->logger = LogHelper::getLogRouter();
         //结束前再次确认已经commit
-        EventManager::instance()->attach(EventManager::SHUTDOWN_EVENT, [$this, 'commit']);
+        //EventManager::instance()->attach(EventManager::SHUTDOWN_EVENT, [$this, 'commit']);
     }
 
     /**
@@ -135,10 +135,12 @@ class Mysql implements MysqlInterface
         if (!$this->is_connect) {
             $this->connect();
         }
+        /*取消自动事务
         if ($is_write && !$this->commit_flag) {
             $this->commit_flag = true;
             $this->executeQuery('BEGIN');
         }
+        //*/
 
         $time = microtime(true);
         $res = $this->link_obj->query($query_sql);
