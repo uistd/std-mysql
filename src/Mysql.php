@@ -144,7 +144,7 @@ class Mysql implements MysqlInterface
         $time = microtime(true);
         $res = $this->link_obj->query($query_sql);
         $run_time = round((microtime(true) - $time) * 1000, 2);
-        $this->logMsg('Query', $query_sql, $run_time . 'ms');
+        $this->logMsg('Query', $query_sql, $run_time . 'ms', $this->link_obj->affected_rows);
         //记录慢查询
         if ($this->slow_query_time > 0 && $run_time > $this->slow_query_time && 'COMMIT' !== $query_sql) {
             $this->logSlowQuery($query_sql, (int)$run_time);
@@ -554,11 +554,15 @@ class Mysql implements MysqlInterface
      * @param string $action
      * @param string $content 消息内容
      * @param string $cost_time
+     * @param null $affect_rows
      */
-    private function logMsg($action, $content, $cost_time)
+    private function logMsg($action, $content, $cost_time, $affect_rows = null)
     {
         $io_step_str = Debug::addIoStep();
         $msg = $io_step_str . '[MYSQL ' . $this->config_name . '][' . $action . '] ' . $content . '[' . $cost_time . ']';
+        if (null !== $affect_rows) {
+            $msg .= '['.$affect_rows.' rows]';
+        }
         $this->logger->info($msg);
     }
 
