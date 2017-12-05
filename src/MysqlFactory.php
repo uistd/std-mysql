@@ -45,7 +45,8 @@ class MysqlFactory extends FFanFactory
      */
     protected static function defaultInstance($config_name, $conf_arr)
     {
-        if ('rw' === $config_name) {
+        $type = isset($conf_arr['type']) ? $conf_arr['type'] : '';
+        if ('rw' === $type) {
             return new RwMysql($config_name, $conf_arr);
         } else {
             return new Mysql($config_name, $conf_arr);
