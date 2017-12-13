@@ -69,8 +69,6 @@ class Mysql implements MysqlInterface
         $this->config_name = $config_name;
         $this->config_set = $config_set;
         $this->logger = LogHelper::getLogRouter();
-        //结束前再次确认已经commit
-        //EventManager::instance()->attach(EventManager::SHUTDOWN_EVENT, [$this, 'commit']);
     }
 
     /**
