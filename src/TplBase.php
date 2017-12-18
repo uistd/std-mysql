@@ -1,10 +1,10 @@
 <?php
 
-namespace FFan\Std\Mysql;
+namespace UiStd\Mysql;
 
 /**
  * Class MysqlDaoTpl
- * @package FFan\Std\Mysql
+ * @package UiStd\Mysql
  */
 abstract class TplBase
 {

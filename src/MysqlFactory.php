@@ -1,25 +1,25 @@
 <?php
-namespace FFan\Std\Mysql;
+namespace UiStd\Mysql;
 
-use FFan\Std\Common\Factory as FFanFactory;
-use FFan\Std\Common\InvalidConfigException;
+use UiStd\Common\Factory as UisFactory;
+use UiStd\Common\InvalidConfigException;
 
 /**
  * Class MysqlFactory
- * @package FFan\Std\Mysql
+ * @package UiStd\Mysql
  */
-class MysqlFactory extends FFanFactory
+class MysqlFactory extends UisFactory
 {
     /**
      * @var string 配置组名
      */
-    protected static $config_group = 'ffan-mysql';
+    protected static $config_group = 'uis-mysql';
 
     /**
      * @var array 别名
      */
     protected static $class_alias = array(
-        'RwMysql' => 'FFan\Std\Mysql\RwMysql',
+        'RwMysql' => 'UiStd\Mysql\RwMysql',
     );
 
     /**

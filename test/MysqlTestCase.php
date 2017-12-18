@@ -1,5 +1,5 @@
 <?php
-namespace FFan\Std\Mysql;
+namespace UiStd\Mysql;
 
 require_once '../vendor/autoload.php';
 require_once 'UserEntity.php';
@@ -72,10 +72,10 @@ print_r($mysql->getMultiAssocCol('select id, username from `users` limit 10'));
 
 print_r($mysql->getMultiFirstCol('select id from `users` limit 10'));
 
-print_r($mysql->getRow('select * from `users` where `id`=' . $user_id, '\FFan\Std\Mysql\UserEntity'));
+print_r($mysql->getRow('select * from `users` where `id`=' . $user_id, '\UiStd\Mysql\UserEntity'));
 
-print_r($mysql->getMultiRow('select * from `users` limit 10', '\FFan\Std\Mysql\UserEntity'));
-print_r($mysql->getMultiAssocRow('select * from `users` limit 10', 'username', '\FFan\Std\Mysql\UserEntity'));
+print_r($mysql->getMultiRow('select * from `users` limit 10', '\UiStd\Mysql\UserEntity'));
+print_r($mysql->getMultiAssocRow('select * from `users` limit 10', 'username', '\UiStd\Mysql\UserEntity'));
 
 $mysql->delete('users', 'id=' . $user_id);
 

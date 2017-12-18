@@ -1,9 +1,9 @@
 <?php
-namespace FFan\Std\Mysql;
+namespace UiStd\Mysql;
 
 /**
  * Class MysqlException
- * @package FFan\Std\Mysql
+ * @package UiStd\Mysql
  */
 class MysqlException extends \Exception
 {

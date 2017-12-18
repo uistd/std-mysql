@@ -1,16 +1,16 @@
 <?php
 
-namespace FFan\Std\Mysql;
+namespace UiStd\Mysql;
 
-use FFan\Std\Common\InvalidConfigException;
-use FFan\Std\Console\Debug;
-use FFan\Std\Logger\LogHelper;
-use FFan\Std\Logger\LogRouter;
-use FFan\Std\Common\Str as FFanStr;
+use UiStd\Common\InvalidConfigException;
+use UiStd\Console\Debug;
+use UiStd\Logger\LogHelper;
+use UiStd\Logger\LogRouter;
+use UiStd\Common\Str as UisStr;
 
 /**
  * Class Mysql
- * @package FFan\Std\Mysql
+ * @package UiStd\Mysql
  */
 class Mysql implements MysqlInterface
 {
@@ -87,7 +87,7 @@ class Mysql implements MysqlInterface
         //p: 表示长连接
         $link_obj = new \mysqli($host, $user, $password, $database, $port);
         $cost_time = Debug::timerStop();
-        $log_msg = FFanStr::tplReplace('connect {user}@{host}:{port} success, use database:{database}', $conf_arr);
+        $log_msg = UisStr::tplReplace('connect {user}@{host}:{port} success, use database:{database}', $conf_arr);
         $this->logMsg('connect', $log_msg, $cost_time);
         if ($link_obj->connect_errno) {
             throw new MysqlException($link_obj->connect_error, MysqlException::CONNECT_FAIL);

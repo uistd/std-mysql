@@ -1,12 +1,12 @@
 <?php
 
-namespace FFan\Std\Mysql;
+namespace UiStd\Mysql;
 
-use FFan\Std\Common\InvalidConfigException;
+use UiStd\Common\InvalidConfigException;
 
 /**
  * Class RwMysql 读写分离的mysql操作类
- * @package FFan\Std\Mysql
+ * @package UiStd\Mysql
  */
 class RwMysql implements MysqlInterface
 {

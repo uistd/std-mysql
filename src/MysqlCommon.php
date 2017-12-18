@@ -1,11 +1,11 @@
 <?php
-namespace FFan\Std\Mysql;
+namespace UiStd\Mysql;
 
-use FFan\Std\Common\Env as FfanEnv;
+use UiStd\Common\Env as UisEnv;
 
 /**
  * Class MysqlCommon Mysql操作通用函数
- * @package FFan\Std\Mysql
+ * @package UiStd\Mysql
  */
 class MysqlCommon
 {
@@ -33,12 +33,7 @@ class MysqlCommon
         if ($table_count < 1) {
             throw new \InvalidArgumentException('table count error');
         }
-        //开发模式下，永远使用_0表
-        if (FfanEnv::isDev()) {
-            $sub_id = 0;
-        } else {
-            $sub_id = $hash_id % $table_count;
-        }
+        $sub_id = $hash_id % $table_count;
         return $table_name . '_' . $sub_id;
     }
 }

@@ -1,9 +1,9 @@
 <?php
-namespace FFan\Std\Mysql;
+namespace UiStd\Mysql;
 
 /**
  * Interface MysqlInterface
- * @package FFan\Std\Mysql
+ * @package UiStd\Mysql
  */
 interface MysqlInterface
 {
